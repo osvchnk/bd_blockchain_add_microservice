@@ -1,13 +1,16 @@
 from fastapi import FastAPI
+import asyncio
+
+from app.rabbit.pika_consumer import PikaConsumer
+
 
 app = FastAPI()
 
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+consumer = PikaConsumer()
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+@app.on_event('startup')
+async def startup():
+    loop = asyncio.get_running_loop()
+    task = loop.create_task(consumer.consume(loop))
+    await task
